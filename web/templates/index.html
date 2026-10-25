@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkSaverBack | Dashboard de Sincronización</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="min-h-full flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 antialiased selection:bg-emerald-500/30 selection:text-emerald-300">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 backdrop-blur-xl bg-slate-950/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+          </svg>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">LinkSaver</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono ml-2">Back v{{.Version}}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-xs font-mono">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Base: <span class="text-slate-200">{{.DataDir}}</span></span>
+        </div>
+        <button onclick="pingServer()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 transition-all duration-200 active:scale-95 flex items-center gap-1.5 font-sans font-medium">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Probar Ping
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+
+    <!-- Top Stats Banner -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-5 transition-all duration-300 hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-400 text-sm">
+          <span>Directorios Activos</span>
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        </div>
+        <div class="mt-2 text-3xl font-bold tracking-tight text-white">{{len .Directories}}</div>
+        <p class="mt-1 text-xs text-slate-500">Etiquetas lógicas de guardado registradas</p>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-5 transition-all duration-300 hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-400 text-sm">
+          <span>Estrategia de Colisión</span>
+          <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <div class="mt-2 text-lg font-bold text-teal-300">Mayor Peso Activa</div>
+        <p class="mt-1 text-xs text-slate-500">Backups automáticos con sufijo (1), (2)...</p>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-5 transition-all duration-300 hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-400 text-sm">
+          <span>Compatibilidad de Clientes</span>
+          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="mt-2 text-sm font-medium text-slate-200 flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-xs">Switch (.nro)</span>
+          <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-xs">Flutter App</span>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Windows, Linux, Android y Switch</p>
+      </div>
+    </div>
+
+    <!-- Section 1: Directory Management & Registration -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Directory Registration Form -->
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-md p-6 flex flex-col justify-between shadow-xl">
+        <div>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Registrar Directorio / Tag
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Crea una nueva etiqueta lógica para mapear entre dispositivos.</p>
+
+          <form id="registerForm" onsubmit="handleRegister(event)" class="mt-4 space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300">Tag Lógico (ID único)</label>
+              <input type="text" id="regTag" required placeholder="ej. retroarch-saves" class="mt-1 w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300">Nombre Descriptivo</label>
+              <input type="text" id="regDisplayName" required placeholder="ej. RetroArch Cores" class="mt-1 w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300">Descripción (Opcional)</label>
+              <input type="text" id="regDesc" placeholder="Saves de emuladores SNES/GBA" class="mt-1 w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+            </div>
+            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-emerald-600/20 active:scale-[0.98]">
+              Registrar Tag
+            </button>
+          </form>
+        </div>
+        <div id="registerMsg" class="mt-3 text-xs hidden"></div>
+      </div>
+
+      <!-- Registered Directories List -->
+      <div class="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-md p-6 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-semibold text-white">Directorios Registrados</h2>
+            <p class="text-xs text-slate-400">Rutas de almacenamiento físico y tags asociados</p>
+          </div>
+          <button onclick="location.reload()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+
+        <div class="space-y-3 flex-1 overflow-y-auto max-h-[380px] pr-1">
+          {{range .Directories}}
+          <div class="rounded-xl border border-slate-800/90 bg-slate-950/60 p-4 transition duration-200 hover:border-slate-700">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-white text-sm">{{.DisplayName}}</span>
+                  <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono">{{.Tag}}</span>
+                </div>
+                {{if .Description}}<p class="text-xs text-slate-400 mt-0.5">{{.Description}}</p>{{end}}
+                <div class="mt-2 text-xs font-mono text-slate-400 flex items-center gap-1">
+                  <span class="text-slate-500">Ruta:</span>
+                  <span class="text-slate-300 break-all">{{.StoragePath}}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 self-end sm:self-center">
+                <button onclick="openStorageModal('{{.Tag}}', '{{.StoragePath}}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Editar Ruta
+                </button>
+                <button onclick="loadVault('{{.Tag}}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-300 text-xs font-medium transition flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                  Ver Bóveda
+                </button>
+              </div>
+            </div>
+          </div>
+          {{else}}
+          <div class="p-8 text-center text-slate-500 text-sm border border-dashed border-slate-800 rounded-xl">
+            No hay directorios registrados aún. Usa el formulario de la izquierda o sincroniza desde un cliente para crear uno automáticamente.
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Save Vault Inspector -->
+    <div id="vaultSection" class="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-md p-6 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Bóveda de Guardados (Save Vault)
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Explora partidas activas, historial de versiones y archivos renombrados por colisión.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-slate-400">Seleccionar Tag:</label>
+          <select id="vaultTagSelect" onchange="loadVault(this.value)" class="rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500">
+            <option value="">-- Elige un tag --</option>
+            {{range .Directories}}
+            <option value="{{.Tag}}">{{.DisplayName}} ({{.Tag}})</option>
+            {{end}}
+          </select>
+        </div>
+      </div>
+
+      <!-- Vault Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950/70 text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-4">Estado</th>
+              <th class="py-3 px-4">Nombre Original</th>
+              <th class="py-3 px-4">Archivo en Disco</th>
+              <th class="py-3 px-4">Tamaño</th>
+              <th class="py-3 px-4">SHA-256</th>
+              <th class="py-3 px-4">Versión</th>
+              <th class="py-3 px-4">Modificado Remoto</th>
+              <th class="py-3 px-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="vaultTableBody" class="divide-y divide-slate-800/60 font-mono">
+            <tr>
+              <td colspan="8" class="py-8 text-center text-slate-500 font-sans">
+                Selecciona un tag arriba o pulsa "Ver Bóveda" en la lista de directorios para cargar sus partidas.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 3: Audit & Sync Logs -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-md p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Registro de Auditoría de Sincronización (Sync Logs)
+          </h2>
+          <p class="text-xs text-slate-400">Últimos eventos registrados desde clientes Nintendo Switch, Desktop o Android</p>
+        </div>
+        <span class="text-xs font-mono text-slate-500">Últimos {{len .Logs}} eventos</span>
+      </div>
+
+      <div class="overflow-x-auto max-h-72 overflow-y-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-2.5 px-3">Hora</th>
+              <th class="py-2.5 px-3">Cliente</th>
+              <th class="py-2.5 px-3">Directorio ID</th>
+              <th class="py-2.5 px-3">Acción</th>
+              <th class="py-2.5 px-3">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 font-mono">
+            {{range .Logs}}
+            <tr class="hover:bg-slate-900/40 transition">
+              <td class="py-2 px-3 text-slate-400 text-[11px]">{{.Timestamp.Format "2006-01-02 15:04:05"}}</td>
+              <td class="py-2 px-3">
+                <span class="px-2 py-0.5 rounded text-[10px] 
+                  {{if eq .ClientType "Switch"}}bg-red-500/20 text-red-300 border border-red-500/30
+                  {{else if eq .ClientType "Android"}}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                  {{else}}bg-sky-500/20 text-sky-300 border border-sky-500/30{{end}}">
+                  {{.ClientType}}
+                </span>
+              </td>
+              <td class="py-2 px-3 text-slate-400">{{.DirectoryID}}</td>
+              <td class="py-2 px-3">
+                <span class="font-medium
+                  {{if eq .Action "conflict_renamed"}}text-amber-400
+                  {{else if eq .Action "upload"}}text-emerald-400
+                  {{else if eq .Action "download"}}text-sky-400
+                  {{else}}text-purple-400{{end}}">
+                  {{.Action}}
+                </span>
+              </td>
+              <td class="py-2 px-3">
+                {{if eq .Status "success"}}
+                <span class="text-emerald-400 flex items-center gap-1">✓ OK</span>
+                {{else}}
+                <span class="text-rose-400 flex items-center gap-1">✗ Falló</span>
+                {{end}}
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="5" class="py-6 text-center text-slate-500 font-sans">
+                No hay registros de sincronización aún.
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Edit Storage Path Modal -->
+  <div id="storageModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="rounded-2xl border border-slate-800 bg-slate-950 p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-white text-base">Modificar Ruta en Disco</h3>
+        <button onclick="closeStorageModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">
+        Tag: <span id="modalTagSpan" class="text-emerald-400 font-mono font-semibold"></span>
+      </p>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Nueva Ruta Física en Servidor</label>
+        <input type="text" id="modalStorageInput" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <p class="text-[11px] text-slate-500 mt-1">Los archivos existentes serán migrados automáticamente a esta ubicación.</p>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeStorageModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium">Cancelar</button>
+        <button onclick="saveStoragePath()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-lg shadow-emerald-600/20">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+    LinkSaver Multiplataforma • Microservicio Go con Gin, GORM y SQLite
+  </footer>
+
+  <script>
+    async function pingServer() {
+      try {
+        const res = await fetch('/api/v1/ping');
+        const data = await res.json();
+        alert(`✓ Conexión Exitosa con LinkSaverBack\n• Estado: ${data.status}\n• Versión: ${data.version}\n• Tiempo Servidor: ${new Date(data.server_time * 1000).toLocaleString()}`);
+      } catch (e) {
+        alert(`✗ Error al conectar con el servidor:\n${e.message}`);
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const tag = document.getElementById('regTag').value.trim();
+      const displayName = document.getElementById('regDisplayName').value.trim();
+      const description = document.getElementById('regDesc').value.trim();
+      const msgDiv = document.getElementById('registerMsg');
+
+      try {
+        const res = await fetch('/api/v1/directories/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag, display_name: displayName, description })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msgDiv.className = "mt-3 text-xs text-emerald-400 block";
+          msgDiv.innerText = `✓ Directorio '${data.tag}' registrado correctamente. Recargando...`;
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msgDiv.className = "mt-3 text-xs text-rose-400 block";
+          msgDiv.innerText = `✗ Error: ${data.message || data.error}`;
+        }
+      } catch (err) {
+        msgDiv.className = "mt-3 text-xs text-rose-400 block";
+        msgDiv.innerText = `✗ Error de red: ${err.message}`;
+      }
+    }
+
+    let activeModalTag = '';
+    function openStorageModal(tag, currentPath) {
+      activeModalTag = tag;
+      document.getElementById('modalTagSpan').innerText = tag;
+      document.getElementById('modalStorageInput').value = currentPath;
+      document.getElementById('storageModal').classList.remove('hidden');
+    }
+
+    function closeStorageModal() {
+      document.getElementById('storageModal').classList.add('hidden');
+    }
+
+    async function saveStoragePath() {
+      const newPath = document.getElementById('modalStorageInput').value.trim();
+      if (!newPath) return alert('Por favor ingresa una ruta válida');
+
+      try {
+        const res = await fetch(`/api/v1/directories/${activeModalTag}/storage-path`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storage_path: newPath })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✓ Ruta actualizada y archivos migrados con éxito.');
+          location.reload();
+        } else {
+          alert(`✗ Error: ${data.message || data.error}`);
+        }
+      } catch (e) {
+        alert(`✗ Error: ${e.message}`);
+      }
+    }
+
+    async function loadVault(tag) {
+      if (!tag) return;
+      document.getElementById('vaultTagSelect').value = tag;
+      const tbody = document.getElementById('vaultTableBody');
+      tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400">Cargando partidas de '${tag}'...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/v1/vault/${tag}/history`);
+        const data = await res.json();
+
+        if (!data.saves || data.saves.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500 font-sans">No hay partidas guardadas aún en el tag '${tag}'.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.saves.map(s => {
+          const isAct = s.is_active;
+          const statusBadge = isAct
+            ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">● Activo</span>`
+            : `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px]">↳ Respaldo ${s.conflict_suffix || ''}</span>`;
+          
+          const sizeKb = (s.file_size_bytes / 1024).toFixed(1) + ' KB';
+          const shortHash = s.sha256_hash.substring(0, 10) + '...';
+          const modTime = new Date(s.remote_modified_at).toLocaleString();
+
+          const restoreBtn = !isAct 
+            ? `<button onclick="restoreSave('${tag}', ${s.id})" class="px-2 py-1 rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-200 text-[11px] font-sans transition">Restaurar a Activo</button>`
+            : '';
+
+          return `
+            <tr class="hover:bg-slate-900/60 transition ${isAct ? 'bg-emerald-950/10' : ''}">
+              <td class="py-3 px-4">${statusBadge}</td>
+              <td class="py-3 px-4 font-bold text-white">${s.original_name}</td>
+              <td class="py-3 px-4 text-slate-300">${s.file_name}</td>
+              <td class="py-3 px-4 text-slate-400">${sizeKb}</td>
+              <td class="py-3 px-4 text-slate-500" title="${s.sha256_hash}">${shortHash}</td>
+              <td class="py-3 px-4 text-slate-400">v${s.version}</td>
+              <td class="py-3 px-4 text-slate-400 text-[11px]">${modTime}</td>
+              <td class="py-3 px-4 text-right space-x-2">
+                <a href="/api/v1/sync/download/${tag}?path=${encodeURIComponent(s.relative_path)}" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-sans inline-block">Descargar</a>
+                ${restoreBtn}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-rose-400">Error al cargar la bóveda: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function restoreSave(tag, fileId) {
+      if (!confirm("¿Deseas restaurar esta versión como la partida activa? La partida activa actual se preservará como un respaldo sufijado.")) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/vault/${tag}/restore`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file_id: fileId })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✓ Guardado restaurado exitosamente a activo.');
+          loadVault(tag);
+        } else {
+          alert(`✗ Error: ${data.message || data.error}`);
+        }
+      } catch (e) {
+        alert(`✗ Error: ${e.message}`);
+      }
+    }
+  </script>
+</body>
+</html>
