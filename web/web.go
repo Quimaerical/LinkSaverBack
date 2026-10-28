@@ -11,8 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//go:embed templates/*
-var templateFS embed.FS
+//go:embed templates/* static/*
+var contentFS embed.FS
 
 type WebHandler struct {
 	cfg         *config.Config
@@ -22,7 +22,7 @@ type WebHandler struct {
 }
 
 func NewWebHandler(cfg *config.Config, dirService *services.DirectoryService, syncService *services.SyncService) (*WebHandler, error) {
-	tmpl, err := template.ParseFS(templateFS, "templates/index.html")
+	tmpl, err := template.ParseFS(contentFS, "templates/index.html")
 	if err != nil {
 		return nil, err
 	}
@@ -32,6 +32,11 @@ func NewWebHandler(cfg *config.Config, dirService *services.DirectoryService, sy
 		syncService: syncService,
 		tmpl:        tmpl,
 	}, nil
+}
+
+// StaticFS returns the embedded filesystem for static assets.
+func (h *WebHandler) StaticFS() http.FileSystem {
+	return http.FS(contentFS)
 }
 
 // Index renders the unified LinkSaver admin dashboard.

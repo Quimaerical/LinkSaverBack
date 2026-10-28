@@ -31,7 +31,11 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) (*gin.Engine, error) {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), middleware.CORSMiddleware())
 
-	// Web UI Dashboard
+	// Web UI Dashboard & Static Assets
+	r.StaticFS("/static", webHandler.StaticFS())
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.Redirect(302, "/static/static/icon-bw.svg")
+	})
 	r.GET("/", webHandler.Index)
 
 	// API v1
