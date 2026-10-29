@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-blue?style=flat-square)](#)
 [![Clients](https://img.shields.io/badge/Clients-Nintendo%20Switch%20%7C%20PC%20%7C%20Android-informational?style=flat-square)](#)
 
-Central synchronization microservice and save file coordinator for the cross-platform LinkSaver ecosystem. LinkSaverBack coordinates game saves across Nintendo Switch (`sw-LinkSaver`) and PC/Android (`LinkSaverApp`) via unified logical tags, automated collision resolution, and an embedded management dashboard.
+Central synchronization microservice and save file coordinator for the cross-platform LinkSaver ecosystem. LinkSaverBack coordinates game saves across Nintendo Switch [(`nx-LinkSaver`)](https://github.com/Quimaerical/nx-LinkSaver) and PC/Android [(`LinkSaverApp`)](https://github.com/Quimaerical/LinkSaverApp) via unified logical tags, automated collision resolution, and an embedded management dashboard.
 
 ---
 
